@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="th" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌌 ZODIAC CONSTELLATION EXPLORER - STELLUNEX</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        starlight: '#00f3ff',
+                        violetglow: '#a855f7',
+                        deepspace: '#030712',
+                        glassborder: 'rgba(0, 243, 255, 0.2)',
+                        glassbg: 'rgba(11, 19, 43, 0.75)'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Prompt', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Tone.js for Sci-Fi Audio FX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Prompt', 'Inter', sans-serif;
+            background-color: #030712;
+            color: #e2e8f0;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 243, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 243, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(0, 243, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .neon-text-blue {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+        .neon-text-violet {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 7, 18, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 243, 255, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 243, 255, 0.6);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Glowing pulse animation */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 5px rgba(0,243,255,0.5)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 15px rgba(0,243,255,0.9)); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full w-full relative flex flex-col justify-between select-none">
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0 cursor-grab active:cursor-grabbing"></div>
+
+    <!-- Top Navigation & Header Bar -->
+    <header class="relative z-20 flex justify-between items-center p-3 md:p-4 glass-panel m-2 md:m-4 rounded-2xl border-cyan-500/30">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 animate-pulse-glow">
+                <i class="fa-solid font-bold fa-user-astronaut text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg md:text-2xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-sky-200 to-purple-400">
+                    STELLUNEX <span class="text-xs font-light px-2 py-0.5 rounded-full border border-cyan-400/40 text-cyan-300 hidden sm:inline-block">PRO 3D</span>
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">สำรวจกลุ่มดาวจักรราศี 3 มิติ (3D Zodiac Constellations Explorer)</p>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative flex-1 max-w-xs md:max-w-md mx-2 md:mx-6">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70 text-sm"></i>
+            <input type="text" id="search-input" placeholder="ค้นหากลุ่มดาว / ดาวฤกษ์ / Deep-Sky (เช่น Leo, Antares, Pleiades)..." 
+                class="w-full bg-slate-900/80 border border-slate-700 focus:border-cyan-400 rounded-xl py-1.5 md:py-2 pl-9 pr-8 text-xs md:text-sm text-cyan-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all">
+            <button id="clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <div id="search-results" class="hidden absolute left-0 right-0 top-full mt-2 glass-panel rounded-xl border border-cyan-500/30 max-h-60 overflow-y-auto z-50 p-1"></div>
+        </div>
+
+        <!-- Header Controls -->
+        <div class="flex items-center space-x-2">
+            <button id="toggle-audio" title="เปิด/ปิด เสียงสังเคราะห์" class="p-2 md:p-2.5 rounded-xl glass-card text-cyan-300 hover:text-white border-cyan-500/30">
+                <i class="fa-solid fa-volume-high text-sm md:text-base"></i>
+            </button>
+            <button id="btn-quiz" title="แบบทดสอบดาราศาสตร์" class="px-3 py-1.5 md:py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 text-xs md:text-sm font-medium transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-brain text-purple-400"></i>
+                <span class="hidden md:inline">ควิซ</span>
+            </button>
+            <button id="btn-compare" title="เปรียบเทียบกลุ่มดาว" class="px-3 py-1.5 md:py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/40 text-cyan-200 text-xs md:text-sm font-medium transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-code-compare text-cyan-400"></i>
+                <span class="hidden md:inline">เปรียบเทียบ</span>
+            </button>
+            <button id="btn-stats" title="ความก้าวหน้าการสำรวจ" class="p-2 md:p-2.5 rounded-xl glass-card text-yellow-400 hover:text-yellow-200 border-yellow-500/30">
+                <i class="fa-solid fa-chart-pie text-sm md:text-base"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Left Tools Control Sidebar Overlay -->
+    <div class="absolute left-2 md:left-4 top-20 md:top-24 z-20 flex flex-col space-y-2">
+        <div class="glass-panel p-2 rounded-2xl flex flex-col space-y-2 border-cyan-500/30">
+            <button id="toggle-grid" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-cyan-950/40 text-cyan-400 hover:bg-cyan-900/60 transition border border-cyan-500/20 active-toggle" title="เปิด/ปิด เส้นพิกัดฟ้า Grid">
+                <i class="fa-solid fa-border-all text-base"></i>
+                <span class="text-[9px]">Grid</span>
+            </button>
+            <button id="toggle-ecliptic" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-cyan-950/40 text-cyan-400 hover:bg-cyan-900/60 transition border border-cyan-500/20 active-toggle" title="เปิด/ปิด เส้นสุริยวิถี Ecliptic">
+                <i class="fa-solid fa-circle-notch text-base text-yellow-400"></i>
+                <span class="text-[9px]">สุริยวิถี</span>
+            </button>
+            <button id="toggle-horizon" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-slate-900/60 text-slate-400 hover:bg-cyan-900/60 hover:text-cyan-400 transition border border-slate-700/50" title="เปิด/ปิด ขอบฟ้า Stargazer Mode">
+                <i class="fa-solid fa-compass text-base"></i>
+                <span class="text-[9px]">ขอบฟ้า</span>
+            </button>
+            <button id="toggle-labels" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-cyan-950/40 text-cyan-400 hover:bg-cyan-900/60 transition border border-cyan-500/20 active-toggle" title="เปิด/ปิด ชื่อดาว & กลุ่มดาว">
+                <i class="fa-solid fa-font text-base"></i>
+                <span class="text-[9px]">ป้ายชื่อ</span>
+            </button>
+            <button id="btn-galactic-center" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-purple-950/60 text-purple-300 hover:bg-purple-900/80 transition border border-purple-500/40" title="วาร์ปไปทางช้างเผือก / ใจกลางกาแล็กซี">
+                <i class="fa-solid fa-atom text-base animate-spin text-purple-400" style="animation-duration: 8s;"></i>
+                <span class="text-[9px]">ใจกลางแกน</span>
+            </button>
+            <button id="btn-reset-cam" class="p-2.5 rounded-xl text-xs flex flex-col items-center justify-center space-y-1 w-12 h-12 bg-slate-900/60 text-slate-300 hover:bg-slate-800 transition border border-slate-700" title="รีเซ็ตมุมมองกล้อง">
+                <i class="fa-solid fa-arrows-to-dot text-base"></i>
+                <span class="text-[9px]">มุมเริ่มต้น</span>
+            </button>
+        </div>
+
+        <!-- Active Constellation Detector Widget -->
+        <div id="detector-widget" class="glass-panel p-2.5 rounded-2xl border-cyan-500/30 w-36 sm:w-44 text-xs flex flex-col space-y-1">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400 flex justify-between items-center">
+                <span><i class="fa-solid fa-crosshairs text-cyan-400 mr-1"></i>ตรวจจับจุดโฟกัส</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            </div>
+            <div id="detected-constellation" class="font-bold text-cyan-200 text-sm truncate">กำลังเล็ง...</div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="detector-bar" class="bg-cyan-400 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side Floating Panel: Time & Location Settings -->
+    <div class="absolute right-2 md:right-4 top-20 md:top-24 z-20 flex flex-col items-end space-y-2">
+        <div class="glass-panel p-3 rounded-2xl border-cyan-500/30 text-xs w-48 sm:w-56 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-1.5">
+                <span class="font-bold text-cyan-300 flex items-center space-x-1">
+                    <i class="fa-solid fa-clock text-cyan-400"></i>
+                    <span>เวลา & พิกัดท้องฟ้า</span>
+                </span>
+                <button id="btn-auto-rotate" class="text-[10px] px-2 py-0.5 rounded bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-800/60">
+                    <i class="fa-solid fa-rotate mr-1"></i>หมุนออโต้
+                </button>
+            </div>
+
+            <!-- Time Slider -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-[11px] text-slate-300">
+                    <span>ฤดูกาล/เดือน:</span>
+                    <span id="time-display" class="font-mono text-cyan-300 font-semibold">มีนาคม</span>
+                </div>
+                <input type="range" id="time-slider" min="0" max="360" value="0" class="w-full accent-cyan-400 bg-slate-800 rounded-lg h-1.5 cursor-pointer">
+                <div class="flex justify-between text-[9px] text-slate-400 pt-0.5">
+                    <button class="quick-time text-slate-400 hover:text-cyan-300" data-deg="0">มี.ค.</button>
+                    <button class="quick-time text-slate-400 hover:text-cyan-300" data-deg="90">มิ.ย.</button>
+                    <button class="quick-time text-slate-400 hover:text-cyan-300" data-deg="180">ก.ย.</button>
+                    <button class="quick-time text-slate-400 hover:text-cyan-300" data-deg="270">ธ.ค.</button>
+                </div>
+            </div>
+
+            <!-- Location Picker -->
+            <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 block">ตำแหน่งผู้สังเกตการณ์:</label>
+                <select id="location-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-cyan-100 focus:outline-none focus:border-cyan-400">
+                    <option value="13.75">📍 กรุงเทพฯ, ไทย (13.75° N)</option>
+                    <option value="18.78">📍 เชียงใหม่, ไทย (18.78° N)</option>
+                    <option value="7.19" selected>📍 สงขลา, ไทย (7.19° N)</option>
+                    <option value="35.67">📍 โตเกียว, ญี่ปุ่น (35.67° N)</option>
+                    <option value="51.50">📍 ลอนดอน, อังกฤษ (51.50° N)</option>
+                    <option value="-33.86">📍 ซิดนีย์, ออสเตรเลีย (33.86° S)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Zodiac Constellation Cards Carousel Slider -->
+    <div class="relative z-20 m-2 md:m-4 mb-3">
+        <div class="flex items-center justify-between mb-1.5 px-2">
+            <span class="text-xs font-semibold text-cyan-300 tracking-wider uppercase flex items-center">
+                <i class="fa-solid fa-star text-yellow-400 mr-1.5"></i>เลือกกลุ่มดาว 12 จักรราศี (Select Zodiac)
+            </span>
+            <span class="text-[10px] text-slate-400 hidden sm:inline">เลื่อนซ้าย-ขวา เพื่อเลือกดูดาว</span>
+        </div>
+        
+        <div id="zodiac-cards-container" class="flex space-x-3 overflow-x-auto pb-2 px-1 scroll-smooth no-scrollbar">
+            <!-- Dynamic Cards Inserted JS -->
+        </div>
+    </div>
+
+    <!-- Detailed Info Sidebar / Modal -->
+    <div id="info-modal" class="fixed inset-y-0 right-0 w-full sm:w-[450px] z-50 glass-panel border-l border-cyan-500/40 transform translate-x-full transition-transform duration-500 ease-in-out p-4 md:p-6 flex flex-col justify-between overflow-y-auto hidden">
+        <div>
+            <!-- Close & Header -->
+            <div class="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-4">
+                <div class="flex items-center space-x-3">
+                    <div id="modal-symbol" class="text-3xl text-cyan-400 font-bold w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center shadow-inner">
+                        ♈
+                    </div>
+                    <div>
+                        <h2 id="modal-title-th" class="text-xl font-bold text-white tracking-wide">กลุ่มดาวแกะ</h2>
+                        <h3 id="modal-title-en" class="text-xs font-mono text-cyan-300">Aries (Hamal)</h3>
+                    </div>
+                </div>
+                <button id="close-modal" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center hover:bg-cyan-900/50 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-slate-800 mb-4 text-xs font-medium space-x-1">
+                <button class="modal-tab px-3 py-2 border-b-2 border-cyan-400 text-cyan-300 font-semibold active-tab" data-tab="tab-overview">ภาพรวม</button>
+                <button class="modal-tab px-3 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="tab-stars">ดาวสว่าง</button>
+                <button class="modal-tab px-3 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="tab-dso">Deep Sky</button>
+                <button class="modal-tab px-3 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="tab-myth">ตำนานเทพปกรณัม</button>
+            </div>
+
+            <!-- Tab Content Sections -->
+            <div id="tab-overview" class="tab-content space-y-4 text-xs sm:text-sm text-slate-300">
+                <p id="modal-description" class="leading-relaxed text-slate-300">
+                    รายละเอียดกลุ่มดาว...
+                </p>
+                <div class="grid grid-cols-2 gap-2.5 my-3">
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">ช่วงเดือนสุริยวิถี</span>
+                        <span id="modal-dates" class="font-semibold text-cyan-200 text-xs">21 มี.ค. - 19 เม.ย.</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">ขนาดพื้นที่บนท้องฟ้า</span>
+                        <span id="modal-area" class="font-semibold text-cyan-200 text-xs">441 ตร.องศา</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">ช่วงเวลาสังเกตได้ดีที่สุด</span>
+                        <span id="modal-season" class="font-semibold text-cyan-200 text-xs">ฤดูหนาว (พ.ย. - ธ.ค.)</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">ดาวฤกษ์หลักประจำกลุ่ม</span>
+                        <span id="modal-alpha" class="font-semibold text-yellow-300 text-xs">Hamal (Alpha Arietis)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-stars" class="tab-content hidden space-y-3">
+                <div id="modal-stars-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-dso" class="tab-content hidden space-y-3">
+                <div id="modal-dso-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-myth" class="tab-content hidden space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20">
+                    <h4 class="font-bold text-purple-300 mb-1 flex items-center">
+                        <i class="fa-solid fa-scroll mr-1.5"></i>เรื่องเล่าตำนานกรีกโบราณ
+                    </h4>
+                    <p id="modal-mythology-text">ตำนานของกลุ่มดาว...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="mt-6 pt-3 border-t border-slate-800 flex space-x-2">
+            <button id="modal-focus-btn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-crosshairs"></i>
+                <span>ซูมโฟกัสใน 3D</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div id="compare-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-2xl w-full rounded-2xl border-cyan-500/40 p-5 md:p-6 relative max-h-[90vh] overflow-y-auto">
+            <button id="close-compare" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-cyan-300 mb-4 flex items-center">
+                <i class="fa-solid fa-code-compare mr-2 text-cyan-400"></i>เปรียบเทียบกลุ่มดาว side-by-side
+            </h3>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">กลุ่มดาวที่ 1:</label>
+                    <select id="compare-select-1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-cyan-200">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">กลุ่มดาวที่ 2:</label>
+                    <select id="compare-select-2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-cyan-200">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dynamic Comparison Table -->
+            <div id="comparison-table-container" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Interactive Astronomy Quiz Modal -->
+    <div id="quiz-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-lg w-full rounded-2xl border-purple-500/40 p-5 md:p-6 relative">
+            <button id="close-quiz" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="flex items-center justify-between mb-4 border-b border-purple-500/30 pb-2">
+                <h3 class="text-lg font-bold text-purple-300 flex items-center">
+                    <i class="fa-solid fa-brain mr-2 text-purple-400"></i>ควิซทายกลุ่มดาว (Zodiac Quiz)
+                </h3>
+                <span id="quiz-score" class="text-xs font-bold text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-full border border-cyan-500/30">คะแนน: 0 / 0</span>
+            </div>
+
+            <div id="quiz-body" class="space-y-4">
+                <div id="quiz-question-box" class="p-4 bg-slate-900/80 rounded-xl border border-slate-700 text-center">
+                    <p id="quiz-question" class="text-sm font-semibold text-white mb-2">คำถามจะปรากฏที่นี่...</p>
+                    <p id="quiz-hint" class="text-xs text-slate-400 italic">คำใบ้เกี่ยวกับดาวประธาน...</p>
+                </div>
+
+                <div id="quiz-options" class="grid grid-cols-1 gap-2.5">
+                    <!-- Dynamic option buttons -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats & Progress Modal -->
+    <div id="stats-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-md w-full rounded-2xl border-yellow-500/40 p-5 md:p-6 relative">
+            <button id="close-stats" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold text-yellow-300 mb-4 flex items-center">
+                <i class="fa-solid fa-trophy mr-2 text-yellow-400"></i>ความก้าวหน้าการสำรวจ (Explorer Progress)
+            </h3>
+
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-xs text-slate-300 mb-1">
+                        <span>เปอร์เซ็นต์ท้องฟ้าที่สำรวจแล้ว:</span>
+                        <span id="stats-pct" class="font-bold text-yellow-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div id="stats-progress-bar" class="bg-gradient-to-r from-yellow-500 to-amber-300 h-full w-0 transition-all duration-500"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 block">กลุ่มดาวที่สำรวจแล้ว</span>
+                        <span id="stats-const-count" class="text-xl font-bold text-cyan-300">0 / 12</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 block">วัตถุท้องฟ้าที่คลิกอ่าน</span>
+                        <span id="stats-dso-count" class="text-xl font-bold text-purple-300">0</span>
+                    </div>
+                </div>
+
+                <button id="btn-reset-stats" class="w-full py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 text-xs transition">
+                    ล้างประวัติการสำรวจ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ZODIAC ASTRONOMICAL DATABASE
+         * Complete spatial 3D coordinates (RA / Dec projected), Key Stars, and DSO
+         */
+        const ZODIAC_DATA = [
+            {
+                id: 'aries',
+                nameTh: 'กลุ่มดาวแกะ',
+                nameEn: 'Aries',
+                symbol: '♈',
+                dates: '21 มี.ค. - 19 เม.ย.',
+                area: '441 ตร.องศา',
+                season: 'ฤดูหนาว (พ.ย. - ธ.ค.)',
+                alphaStar: 'Hamal (Alpha Arietis)',
+                ra: 2.5, // hours
+                dec: 20.0, // degrees
+                color: 0x00f3ff,
+                stars: [
+                    { name: 'Hamal (Alpha Arietis)', mag: 2.01, temp: 'K2III (ส้ม giant)' },
+                    { name: 'Sheratan (Beta Arietis)', mag: 2.64, temp: 'A5V (ขาว main seq)' },
+                    { name: 'Mesarthim (Gamma Arietis)', mag: 3.88, temp: 'A1V (ระบบดาวคู่)' }
+                ],
+                lines: [
+                    [ [2.12, 23.46], [1.91, 20.80] ],
+                    [ [1.91, 20.80], [1.89, 19.29] ]
+                ],
+                dso: ['NGC 772 (Spiral Galaxy)', 'NGC 697'],
+                mythology: 'แกะทองคำขนทองคำผู้ช่วยเฟริกซุส (Phrixus) และเฮลลี (Helle) จากภัยพิบัติ ต่อมาถูกถวายแก่เทพซุส ขนทองคำของมันเป็นที่มาของมหากาพย์การตามหาขนแกะทองคำของเจสันและลูกเรืออาร์โก',
+                description: 'กลุ่มดาวจักรราศีแรกบนเส้นสุริยวิถี เคยเป็นจุดวสันตวิษุวัต (First Point of Aries) ในยุคโบราณ'
+            },
+            {
+                id: 'taurus',
+                nameTh: 'กลุ่มดาววัว',
+                nameEn: 'Taurus',
+                symbol: '♉',
+                dates: '20 เม.ย. - 20 พ.ค.',
+                area: '797 ตร.องศา',
+                season: 'ฤดูหนาว (ธ.ค. - ม.ค.)',
+                alphaStar: 'Aldebaran (ดาวโรหิณี)',
+                ra: 4.5,
+                dec: 18.0,
+                color: 0xffa500,
+                stars: [
+                    { name: 'Aldebaran (Alpha Tauri)', mag: 0.85, temp: 'K5III (ยักษ์แดงดวงตาของวัว)' },
+                    { name: 'Elnath (Beta Tauri)', mag: 1.65, temp: 'B7III (ฟ้า-ขาว ปลายเขาวัว)' },
+                    { name: 'Alcyone (Pleiades)', mag: 2.87, temp: 'B7III (กระจุกดาวลูกไก่)' }
+                ],
+                lines: [
+                    [ [4.59, 16.51], [4.47, 15.96] ],
+                    [ [4.47, 15.96], [4.33, 17.54] ],
+                    [ [4.33, 17.54], [5.43, 28.61] ],
+                    [ [4.47, 15.96], [5.62, 21.14] ]
+                ],
+                dso: ['M45 (Pleiades / กระจุกดาวลูกไก่)', 'M1 (Crab Nebula / เนบิวลาปู)'],
+                mythology: 'ร่างแปลงของเทพซุสเป็นวัวสีขาวบริสุทธิ์เพื่อล่อลวงเจ้าหญิงยูโรปา (Europa) ข้ามทะเลไปยังเกาะครีต',
+                description: 'โดดเด่นด้วยดาวอัลเดบารันสีส้มแดงและกระจุกดาวลูกไก่ (M45) สว่างเห็นได้ด้วยตาเปล่า'
+            },
+            {
+                id: 'gemini',
+                nameTh: 'กลุ่มดาวคนคู่',
+                nameEn: 'Gemini',
+                symbol: '♊',
+                dates: '21 พ.ค. - 20 มิ.ย.',
+                area: '514 ตร.องศา',
+                season: 'ฤดูหนาว (ม.ค. - ก.พ.)',
+                alphaStar: 'Castor & Pollux (คาสเตอร์ & พอลลักซ์)',
+                ra: 7.2,
+                dec: 22.0,
+                color: 0x38bdf8,
+                stars: [
+                    { name: 'Pollux (Beta Geminorum)', mag: 1.14, temp: 'K0III (ยักษ์ส้มอมเหลือง)' },
+                    { name: 'Castor (Alpha Geminorum)', mag: 1.58, temp: 'A1V (ระบบดาว 6 ดวง complex)' },
+                    { name: 'Alhena (Gamma Geminorum)', mag: 1.93, temp: 'A1IV' }
+                ],
+                lines: [
+                    [ [7.58, 31.89], [7.76, 28.26] ],
+                    [ [7.58, 31.89], [6.63, 25.13] ],
+                    [ [7.76, 28.26], [6.73, 16.39] ]
+                ],
+                dso: ['M35 (Open Cluster)', 'Eskimo Nebula (NGC 2392)'],
+                mythology: 'สองพี่น้องฝาแฝด คาสเตอร์ (มนุษย์) และพอลลักซ์ (บุตรแห่งซุส อมตะ) เมื่อคาสเตอร์สิ้นชีพ พอลลักซ์จึงอ้อนวอนซุสขอแบ่งความอมตะให้อยู่ร่วมกันบนฟ้า',
+                description: 'สังเกตง่ายจากดาวสว่างคู่บนศีรษะสองดวง และเป็นพิกัดกระจุกดาวเปิด M35'
+            },
+            {
+                id: 'cancer',
+                nameTh: 'กลุ่มดาวปู',
+                nameEn: 'Cancer',
+                symbol: '♋',
+                dates: '21 มิ.ย. - 22 ก.ค.',
+                area: '506 ตร.องศา',
+                season: 'ฤดูใบไม้ผลิ (ก.พ. - มี.ค.)',
+                alphaStar: 'Tarf (Beta Cancri)',
+                ra: 8.6,
+                dec: 20.0,
+                color: 0x818cf8,
+                stars: [
+                    { name: 'Tarf (Beta Cancri)', mag: 3.5, temp: 'K4III (ยักษ์ส้ม)' },
+                    { name: 'Asellus Australis (Delta)', mag: 3.94, temp: 'K0III' },
+                    { name: 'Acubens (Alpha Cancri)', mag: 4.26, temp: 'A5m' }
+                ],
+                lines: [
+                    [ [8.74, 9.18], [8.74, 18.15] ],
+                    [ [8.74, 18.15], [8.97, 11.85] ],
+                    [ [8.74, 18.15], [8.28, 18.00] ]
+                ],
+                dso: ['M44 (Beehive Cluster / กระจุกดาวรังผึ้ง)', 'M67 (Old Open Cluster)'],
+                mythology: 'ปูยักษ์ที่เฮราส่งมาหนีบส้นเท้าของเฮอร์คิวลิสขณะต่อสู้กับไฮดรา แม้จะถูกเหยียบตาย แต่เฮราก็ได้ยกย่องความซื่อสัตย์นำขึ้นไปไว้บนฟ้า',
+                description: 'แม้ดาวจางแต่มีกระจุกดาวรังผึ้ง (M44) สว่างมองเห็นเป็นฝ้าเมฆนุ่มบนฟ้า'
+            },
+            {
+                id: 'leo',
+                nameTh: 'กลุ่มดาวสิงโต',
+                nameEn: 'Leo',
+                symbol: '♌',
+                dates: '23 ก.ค. - 22 ส.ค.',
+                area: '947 ตร.องศา',
+                season: 'ฤดูใบไม้ผลิ (มี.ค. - เม.ย.)',
+                alphaStar: 'Regulus (ดาวหัวใจสิงห์)',
+                ra: 10.7,
+                dec: 15.0,
+                color: 0xfacc15,
+                stars: [
+                    { name: 'Regulus (Alpha Leonis)', mag: 1.36, temp: 'B8IV (ดาวฟ้าสว่างหัวใจสิงห์)' },
+                    { name: 'Denebola (Beta Leonis)', mag: 2.14, temp: 'A3V (หางสิงโต)' },
+                    { name: 'Algieba (Gamma Leonis)', mag: 2.01, temp: 'K1III (แผงคอสิงห์)' }
+                ],
+                lines: [
+                    [ [10.14, 11.97], [10.33, 19.84] ],
+                    [ [10.33, 19.84], [10.28, 23.42] ],
+                    [ [10.28, 23.42], [9.87, 26.00] ],
+                    [ [10.14, 11.97], [11.82, 14.57] ],
+                    [ [11.82, 14.57], [11.23, 20.52] ],
+                    [ [11.23, 20.52], [10.33, 19.84] ]
+                ],
+                dso: ['M65, M66 & NGC 3628 (Leo Triplet Galaxies)'],
+                mythology: 'สิงโตเนเมีย (Nemean Lion) หนังเหนียวฟันแทงไม่เข้า ซึ่งเป็นภารกิจแรกของเฮอร์คิวลิสในการสังหาร',
+                description: 'มีลักษณะเด่นเคียวเกี่ยวข้าว (Sickle asterism) และดาวเรกูลัสสีฟ้าบริสุทธิ์'
+            },
+            {
+                id: 'virgo',
+                nameTh: 'กลุ่มดาวหญิงสาว',
+                nameEn: 'Virgo',
+                symbol: '♍',
+                dates: '23 ส.ค. - 22 ก.ย.',
+                area: '1294 ตร.องศา',
+                season: 'ฤดูใบไม้ผลิ (เม.ย. - พ.ค.)',
+                alphaStar: 'Spica (ดาวรวงข้าว)',
+                ra: 13.2,
+                dec: -4.0,
+                color: 0x38bdf8,
+                stars: [
+                    { name: 'Spica (Alpha Virginis)', mag: 0.98, temp: 'B1III-IV (สว่างสีฟ้าบริสุทธิ์)' },
+                    { name: 'Porrima (Gamma Virginis)', mag: 2.74, temp: 'F0V' },
+                    { name: 'Vindemiatrix (Epsilon Virginis)', mag: 2.83, temp: 'G8III' }
+                ],
+                lines: [
+                    [ [13.42, -11.16], [12.69, -1.45] ],
+                    [ [12.69, -1.45], [12.93, 10.95] ],
+                    [ [12.69, -1.45], [12.26, -0.66] ],
+                    [ [13.42, -11.16], [14.04, -6.00] ]
+                ],
+                dso: ['M87 (Supergiant Galaxy / หลุมดำ M87*)', 'Virgo Cluster of Galaxies'],
+                mythology: 'เทพีแห่งความยุติธรรม แอสเทรีย (Astraea) หรือ เทพีแห่งการเพาะปลูก ดีมิเทอร์ ถือรวงข้าวรวงใหญ่',
+                description: 'กลุ่มดาวที่ใหญ่ที่สุดเป็นอันดับ 2 ในท้องฟ้า เต็มไปด้วยกระจุกกาแล็กซี Virgo Cluster'
+            },
+            {
+                id: 'libra',
+                nameTh: 'กลุ่มดาวคันชั่ง',
+                nameEn: 'Libra',
+                symbol: '♎',
+                dates: '23 ก.ย. - 22 ต.ค.',
+                area: '538 ตร.องศา',
+                season: 'ฤดูร้อน (พ.ค. - มิ.ย.)',
+                alphaStar: 'Zubeneschamali & Zubenelgenubi',
+                ra: 15.3,
+                dec: -15.0,
+                color: 0x34d399,
+                stars: [
+                    { name: 'Zubeneschamali (Beta Librae)', mag: 2.61, temp: 'B8V (เขียวอมฟ้าหายาก)' },
+                    { name: 'Zubenelgenubi (Alpha Librae)', mag: 2.75, temp: 'A3IV' },
+                    { name: 'Brachium (Sigma Librae)', mag: 3.25, temp: 'M3III' }
+                ],
+                lines: [
+                    [ [14.85, -16.04], [15.28, -9.38] ],
+                    [ [15.28, -9.38], [15.59, -25.28] ],
+                    [ [15.59, -25.28], [14.85, -16.04] ]
+                ],
+                dso: ['NGC 5897 (Globular Cluster)'],
+                mythology: 'ตราชั่งแห่งความยุติธรรมของเทพีแอสเทรีย ชั่งน้ำหนักความดีความชั่วของวิญญาณมนุษย์',
+                description: 'กลุ่มดาวจักรราศีเดียวที่เป็นสิ่งของไม่มีชีวิต เคยเป็นส่วนก้ามของสแกอเปียส (แมงป่อง)'
+            },
+            {
+                id: 'scorpius',
+                nameTh: 'กลุ่มดาวแมงป่อง',
+                nameEn: 'Scorpius',
+                symbol: '♏',
+                dates: '23 ต.ค. - 21 พ.ย.',
+                area: '497 ตร.องศา',
+                season: 'ฤดูร้อน (มิ.ย. - ก.ค.)',
+                alphaStar: 'Antares (ดาวใจแมงป่อง)',
+                ra: 16.9,
+                dec: -30.0,
+                color: 0xef4444,
+                stars: [
+                    { name: 'Antares (Alpha Scorpii)', mag: 0.96, temp: 'M1.5Iab (ดาวยักษ์แดงใหญ่พิเศษ)' },
+                    { name: 'Shaula (Lambda Scorpii)', mag: 1.62, temp: 'B2IV (เหล็กไนแมงป่อง)' },
+                    { name: 'Sargas (Theta Scorpii)', mag: 1.86, temp: 'F0II' }
+                ],
+                lines: [
+                    [ [16.00, -22.62], [16.49, -26.43] ],
+                    [ [16.49, -26.43], [16.84, -30.58] ],
+                    [ [16.84, -30.58], [17.62, -37.04] ],
+                    [ [17.62, -37.04], [17.56, -43.00] ],
+                    [ [17.56, -43.00], [17.5 interface, -37.0] ],
+                    [ [17.56, -43.00], [17.56, -37.00] ]
+                ],
+                dso: ['M4 (Globular Cluster ใกล้โลก)', 'M6 (Butterfly Cluster)', 'M7 (Ptolemy Cluster)'],
+                mythology: 'แมงป่องยักษ์ที่เทพีจีอาส่งไปสังหารพรานป่าโอไรออน (Orion) ทำให้ทั้งสองไม่มีวันปรากฏบนฟ้าพร้อมกัน',
+                description: 'กลุ่มดาวที่มีรูปทรงเด่นชัดที่สุดในทางช้างเผี่ยว มี Antares สว่างเป็นสีแดงส้ม'
+            },
+            {
+                id: 'sagittarius',
+                nameTh: 'กลุ่มดาวคนยิงธนู',
+                nameEn: 'Sagittarius',
+                symbol: '♐',
+                dates: '22 พ.ย. - 21 ธ.ค.',
+                area: '867 ตร.องศา',
+                season: 'ฤดูร้อน (ก.ค. - ส.ค.)',
+                alphaStar: 'Kaus Australis (Epsilon Sagittarii)',
+                ra: 19.0,
+                dec: -25.0,
+                color: 0xc084fc,
+                stars: [
+                    { name: 'Kaus Australis (Epsilon)', mag: 1.79, temp: 'B9.5III' },
+                    { name: 'Nunki (Sigma Sagittarii)', mag: 2.05, temp: 'B2V' },
+                    { name: 'Ascella (Zeta Sagittarii)', mag: 2.60, temp: 'A2III' }
+                ],
+                lines: [
+                    [ [18.40, -25.42], [18.35, -29.82] ],
+                    [ [18.35, -29.82], [19.04, -29.88] ],
+                    [ [19.04, -29.88], [18.96, -26.29] ],
+                    [ [18.96, -26.29], [18.40, -25.42] ], // Teapot body
+                    [ [18.96, -26.29], [19.01, -21.06] ]
+                ],
+                dso: ['Lagoon Nebula (M8)', 'Trifid Nebula (M20)', 'Galactic Center (Sgr A*)'],
+                mythology: 'เซนทอร์ ชายรอน (Chiron) ผู้รอบรู้สรรพวิชา ครูสอนเหล่าพฤกษเทพและวีรบุรุษกรีก',
+                description: 'ทิศทางของกลุ่มดาวนี้คือศูนย์กลางกาแล็กซีทางช้างเผือก มีกลุ่มดาวเรียงเป็นกาน้ำชา (Teapot)'
+            },
+            {
+                id: 'capricornus',
+                nameTh: 'กลุ่มดาวมังกร / แพะทะเล',
+                nameEn: 'Capricornus',
+                symbol: '♑',
+                dates: '22 ธ.ค. - 19 ม.ค.',
+                area: '414 ตร.องศา',
+                season: 'ฤดูใบไม้ร่วง (ส.ค. - ก.ย.)',
+                alphaStar: 'Deneb Algedi (Delta Capricorni)',
+                ra: 21.0,
+                dec: -20.0,
+                color: 0x2dd4bf,
+                stars: [
+                    { name: 'Deneb Algedi (Delta)', mag: 2.85, temp: 'A7m (หางแพะ)' },
+                    { name: 'Dabih (Beta Capricorni)', mag: 3.05, temp: 'F8V' },
+                    { name: 'Algiedi (Alpha Capricorni)', mag: 3.58, temp: 'G3Ib' }
+                ],
+                lines: [
+                    [ [20.30, -12.53], [20.35, -14.78] ],
+                    [ [20.35, -14.78], [21.78, -16.13] ],
+                    [ [21.78, -16.13], [20.77, -26.92] ],
+                    [ [20.77, -26.92], [20.30, -12.53] ]
+                ],
+                dso: ['M30 (Globular Cluster)'],
+                mythology: 'เทพแพน (Pan) กระโดดลงน้ำหนีอสูรกายไทฟอน ร่างกายส่วนบนจึงเป็นแพะ ส่วนล่างเป็นปลา',
+                description: 'กลุ่มดาวจางรูปทรงหมวกปีกกว้างหรือเรือแคนู สังเกตง่ายในฤดูใบไม้ร่วง'
+            },
+            {
+                id: 'aquarius',
+                nameTh: 'กลุ่มดาวคนแบกหม้อน้ำ',
+                nameEn: 'Aquarius',
+                symbol: '♒',
+                dates: '20 ม.ค. - 18 ก.พ.',
+                area: '980 ตร.องศา',
+                season: 'ฤดูใบไม้ร่วง (ก.ย. - ต.ค.)',
+                alphaStar: 'Sadalsuud (Beta Aquarii)',
+                ra: 22.5,
+                dec: -10.0,
+                color: 0x38bdf8,
+                stars: [
+                    { name: 'Sadalsuud (Beta Aquarii)', mag: 2.87, temp: 'G0Ib (ยักษ์ใหญ่เหลือง)' },
+                    { name: 'Sadalmelik (Alpha Aquarii)', mag: 2.94, temp: 'G2Ib' },
+                    { name: 'Skat (Delta Aquarii)', mag: 3.27, temp: 'A3V' }
+                ],
+                lines: [
+                    [ [21.52, -5.57], [22.09, -0.32] ],
+                    [ [22.09, -0.32], [22.91, -15.82] ],
+                    [ [22.91, -15.82], [22.09, -0.32] ]
+                ],
+                dso: ['Helix Nebula (NGC 7293)', 'Saturn Nebula (NGC 7009)', 'M2 Cluster'],
+                mythology: 'เจ้าชายแกนีมีด (Ganymede) ผู้มีรูปโฉมงดงาม รินน้ำอมฤตถวายเหล่าเทพเจ้าบนยอดเขาโอลิมปัส',
+                description: 'มีเนบิวลาดาวเคราะห์ดวงตาแห่งพระเจ้า (Helix Nebula) และเป็นศูนย์กลางฝนดาวตก'
+            },
+            {
+                id: 'pisces',
+                nameTh: 'กลุ่มดาวปลาคู่',
+                nameEn: 'Pisces',
+                symbol: '♓',
+                dates: '19 ก.พ. - 20 มี.ค.',
+                area: '889 ตร.องศา',
+                season: 'ฤดูใบไม้ร่วง (ต.ค. - พ.ย.)',
+                alphaStar: 'Alpherg (Eta Piscium) / Alrescha',
+                ra: 1.0,
+                dec: 12.0,
+                color: 0xa855f7,
+                stars: [
+                    { name: 'Alpherg (Eta Piscium)', mag: 3.62, temp: 'G7III' },
+                    { name: 'Alrescha (Alpha Piscium)', mag: 3.82, temp: 'A2V (ปมเชือกผูกปลา)' },
+                    { name: 'Fum al Samakah (Beta)', mag: 4.48, temp: 'B6Ve' }
+                ],
+                lines: [
+                    [ [2.03, 2.76], [1.52, 15.34] ],
+                    [ [1.52, 15.34], [23.66, 6.86] ],
+                    [ [23.66, 6.86], [2.03, 2.76] ]
+                ],
+                dso: ['M74 (Phantom Galaxy - Spiral)'],
+                mythology: 'เทพีอโฟรไดที (Aphrodite) และอีรอส (Eros) แปลงร่างเป็นปลาสองตัวผูกริบบิ้นติดกันเพื่อหนีภัยอสูรไทฟอน',
+                description: 'จุดตัดจานสุริยวิถีปัจจุบัน (Vernal Equinox) ตั้งอยู่ในกลุ่มดาวนี้'
+            }
+        ];
+
+        // Global Application State
+        const state = {
+            activeConstellation: null,
+            autoRotate: true,
+            audioEnabled: true,
+            stargazerHorizon: false,
+            showGrid: true,
+            showEcliptic: true,
+            showLabels: true,
+            timeOffsetDeg: 0,
+            observerLat: 7.19,
+            exploredIds: new Set(['aries']),
+            dsoClickedCount: 0,
+            quizScore: 0,
+            quizTotal: 0,
+            synth: null
+        };
+
+        // Initialize Audio Tone.js Synth
+        function initAudio() {
+            try {
+                if (window.Tone) {
+                    state.synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 }
+                    }).toDestination();
+                    state.synth.volume.value = -12;
+                }
+            } catch (e) {
+                console.log("Audio init fallback");
+            }
+        }
+
+        function playSound(freq = "C5") {
+            if (state.audioEnabled && state.synth) {
+                try {
+                    Tone.start();
+                    state.synth.triggerAttackRelease(freq, "8n");
+                } catch(e){}
+            }
+        }
+
+        // ThreeJS Engine Core
+        let scene, camera, renderer, controls;
+        let starSphereGroup, constLinesGroup, eclipticGroup, gridGroup, horizonGroup, labelsGroup, dsoGroup;
+        let constNodeObjects = [];
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.0015);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 2000);
+            camera.position.set(0, 0, 140);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.6;
+            controls.zoomSpeed = 0.8;
+            controls.maxDistance = 350;
+            controls.minDistance = 20;
+
+            // Groups
+            starSphereGroup = new THREE.Group();
+            constLinesGroup = new THREE.Group();
+            eclipticGroup = new THREE.Group();
+            gridGroup = new THREE.Group();
+            horizonGroup = new THREE.Group();
+            labelsGroup = new THREE.Group();
+            dsoGroup = new THREE.Group();
+
+            scene.add(starSphereGroup);
+            scene.add(constLinesGroup);
+            scene.add(eclipticGroup);
+            scene.add(gridGroup);
+            scene.add(horizonGroup);
+            scene.add(labelsGroup);
+            scene.add(dsoGroup);
+
+            // Build Environment Components
+            buildDeepSpaceBackground();
+            buildCelestialGrid();
+            buildEclipticLine();
+            buildHorizonGround();
+            buildZodiac3DObjects();
+
+            // Window Resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Interaction listeners
+            renderer.domElement.addEventListener('click', onCanvasClick);
+            renderer.domElement.addEventListener('mousemove', onCanvasHover);
+        }
+
+        function buildDeepSpaceBackground() {
+            // Background ambient stars (10,000 background particles)
+            const count = 8000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+
+            const colorOptions = [
+                new THREE.Color(0x00f3ff), // Cyan
+                new THREE.Color(0xffffff), // White
+                new THREE.Color(0xa855f7), // Violet
+                new THREE.Color(0xfbcfe8), // Soft pink
+                new THREE.Color(0xfde047)  // Yellow
+            ];
+
+            for (let i = 0; i < count; i++) {
+                const u = Math.random();
+                const v = Math.random();
+                const theta = u * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * v - 1.0);
+                const r = 500 + Math.random() * 300;
+
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+
+                const c = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                colors[i * 3] = c.r;
+                colors[i * 3 + 1] = c.g;
+                colors[i * 3 + 2] = c.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const bgParticles = new THREE.Points(geometry, material);
+            starSphereGroup.add(bgParticles);
+        }
+
+        function buildCelestialGrid() {
+            // Equatorial RA/Dec Grid Lines
+            const gridMat = new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.15 });
+            const radius = 150;
+
+            // Latitude rings (Declination)
+            for (let dec = -60; dec <= 60; dec += 30) {
+                const points = [];
+                const rDec = radius * Math.cos(THREE.MathUtils.degToRad(dec));
+                const y = radius * Math.sin(THREE.MathUtils.degToRad(dec));
+                for (let i = 0; i <= 64; i++) {
+                    const theta = (i / 64) * Math.PI * 2;
+                    points.push(new THREE.Vector3(rDec * Math.cos(theta), y, rDec * Math.sin(theta)));
+                }
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                gridGroup.add(new THREE.Line(geom, gridMat));
+            }
+
+            // Longitude lines (Right Ascension)
+            for (let ra = 0; ra < 24; ra += 3) {
+                const points = [];
+                const theta = (ra / 24) * Math.PI * 2;
+                for (let i = 0; i <= 64; i++) {
+                    const phi = (i / 64) * Math.PI - Math.PI / 2;
+                    points.push(new THREE.Vector3(
+                        radius * Math.cos(phi) * Math.cos(theta),
+                        radius * Math.sin(phi),
+                        radius * Math.cos(phi) * Math.sin(theta)
+                    ));
+                }
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                gridGroup.add(new THREE.Line(geom, gridMat));
+            }
+        }
+
+        function buildEclipticLine() {
+            // Sun's Annual Path on Sky Sphere (Ecliptic tilt ~23.44 deg)
+            const points = [];
+            const radius = 150;
+            const tilt = THREE.MathUtils.degToRad(23.44);
+
+            for (let i = 0; i <= 128; i++) {
+                const theta = (i / 128) * Math.PI * 2;
+                const x = radius * Math.cos(theta);
+                const y = radius * Math.sin(theta) * Math.sin(tilt);
+                const z = radius * Math.sin(theta) * Math.cos(tilt);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+
+            const geom = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineDashedMaterial({
+                color: 0xfacc15,
+                dashSize: 4,
+                gapSize: 2,
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.8
+            });
+            const line = new THREE.Line(geom, mat);
+            line.computeLineDistances();
+            eclipticGroup.add(line);
+        }
+
+        function buildHorizonGround() {
+            // Stargazer Ground Horizon Ring
+            const radius = 140;
+            const points = [];
+            for (let i = 0; i <= 64; i++) {
+                const theta = (i / 64) * Math.PI * 2;
+                points.push(new THREE.Vector3(radius * Math.cos(theta), 0, radius * Math.sin(theta)));
+            }
+            const geom = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.6 });
+            horizonGroup.add(new THREE.Line(geom, mat));
+            horizonGroup.visible = false; // Hidden by default
+        }
+
+        function raDecToVector3(raHours, decDeg, radius = 150) {
+            const raRad = (raHours / 24) * Math.PI * 2;
+            const decRad = THREE.MathUtils.degToRad(decDeg);
+            return new THREE.Vector3(
+                radius * Math.cos(decRad) * Math.cos(raRad),
+                radius * Math.sin(decRad),
+                radius * Math.cos(decRad) * Math.sin(raRad)
+            );
+        }
+
+        function buildZodiac3DObjects() {
+            ZODIAC_DATA.forEach((zodiac) => {
+                const centerPos = raDecToVector3(zodiac.ra, zodiac.dec, 150);
+
+                // 1. Constellation Center Node (Interactive Sphere)
+                const nodeGeo = new THREE.SphereGeometry(2.5, 16, 16);
+                const nodeMat = new THREE.MeshBasicMaterial({
+                    color: zodiac.color,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
+                nodeMesh.position.copy(centerPos);
+                nodeMesh.userData = { type: 'constellation', data: zodiac };
+                constLinesGroup.add(nodeMesh);
+                constNodeObjects.push(nodeMesh);
+
+                // Glow ring around constellation node
+                const ringGeo = new THREE.RingGeometry(3.5, 4.2, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ color: zodiac.color, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.position.copy(centerPos);
+                ringMesh.lookAt(0, 0, 0);
+                constLinesGroup.add(ringMesh);
+
+                // 2. Render Stars within Constellation
+                zodiac.stars.forEach((star, index) => {
+                    const offset = new THREE.Vector3(
+                        (Math.random() - 0.5) * 15,
+                        (Math.random() - 0.5) * 15,
+                        (Math.random() - 0.5) * 15
+                    );
+                    const starPos = centerPos.clone().add(offset);
+
+                    const starSize = Math.max(0.8, 2.5 - star.mag * 0.4);
+                    const starGeo = new THREE.SphereGeometry(starSize, 12, 12);
+                    const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    const starMesh = new THREE.Mesh(starGeo, starMat);
+                    starMesh.position.copy(starPos);
+                    starMesh.userData = { type: 'star', data: star, parentZodiac: zodiac };
+                    constLinesGroup.add(starMesh);
+                });
+
+                // 3. Render Constellation Skeleton Lines
+                if (zodiac.lines && zodiac.lines.length > 0) {
+                    const lineMat = new THREE.LineBasicMaterial({
+                        color: zodiac.color,
+                        transparent: true,
+                        opacity: 0.7,
+                        linewidth: 2
+                    });
+
+                    zodiac.lines.forEach((segment) => {
+                        const pt1 = raDecToVector3(segment[0][0], segment[0][1], 148);
+                        const pt2 = raDecToVector3(segment[1][0], segment[1][1], 148);
+
+                        const lineGeo = new THREE.BufferGeometry().setFromPoints([pt1, pt2]);
+                        const lineObj = new THREE.Line(lineGeo, lineMat);
+                        constLinesGroup.add(lineObj);
+                    });
+                }
+
+                // 4. Deep-Sky Objects (DSO) Marker
+                if (zodiac.dso && zodiac.dso.length > 0) {
+                    const dsoPos = centerPos.clone().add(new THREE.Vector3(8, -8, 5));
+                    const dsoGeo = new THREE.OctahedronGeometry(2, 0);
+                    const dsoMat = new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true });
+                    const dsoMesh = new THREE.Mesh(dsoGeo, dsoMat);
+                    dsoMesh.position.copy(dsoPos);
+                    dsoMesh.userData = { type: 'dso', name: zodiac.dso[0], zodiac: zodiac };
+                    dsoGroup.add(dsoMesh);
+                }
+            });
+        }
+
+        function renderZodiacCards() {
+            const container = document.getElementById('zodiac-cards-container');
+            container.innerHTML = '';
+
+            ZODIAC_DATA.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = `glass-card flex-shrink-0 w-32 sm:w-36 p-2.5 rounded-2xl cursor-pointer flex flex-col items-center border ${state.activeConstellation?.id === item.id ? 'border-cyan-400 bg-cyan-950/50 ring-2 ring-cyan-400/50' : 'border-slate-800'}`;
+                card.onclick = () => focusConstellation(item.id);
+
+                card.innerHTML = `
+                    <div class="text-2xl font-bold text-cyan-400 mb-1">${item.symbol}</div>
+                    <div class="text-xs font-bold text-white truncate w-full text-center">${item.nameTh}</div>
+                    <div class="text-[10px] font-mono text-cyan-300/80 truncate">${item.nameEn}</div>
+                    <div class="text-[9px] text-slate-400 mt-1 flex items-center">
+                        <i class="fa-solid fa-location-crosshairs mr-1 text-cyan-400"></i>${item.alphaStar.split(' ')[0]}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function focusConstellation(id) {
+            const zodiac = ZODIAC_DATA.find(z => z.id === id);
+            if (!zodiac) return;
+
+            state.activeConstellation = zodiac;
+            state.exploredIds.add(id);
+            updateExplorerStats();
+            renderZodiacCards();
+            playSound("E5");
+
+            // Calculate Target Camera Position
+            const targetPos = raDecToVector3(zodiac.ra, zodiac.dec, 150);
+            const camTargetPos = raDecToVector3(zodiac.ra, zodiac.dec, 80);
+
+            // Animate Orbit Controls smoothly
+            const duration = 1200;
+            const startCamPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const startTime = performance.now();
+
+            function animateZoom(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+
+                camera.position.lerpVectors(startCamPos, camTargetPos, ease);
+                controls.target.lerpVectors(startTarget, targetPos, ease);
+                controls.update();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateZoom);
+                } else {
+                    openInfoModal(zodiac);
+                }
+            }
+            requestAnimationFrame(animateZoom);
+        }
+
+        function triggerGalacticCenterExperience() {
+            playSound("G4");
+            // Focus on Sagittarius Galactic Center
+            const sgr = ZODIAC_DATA.find(z => z.id === 'sagittarius');
+            if (sgr) {
+                focusConstellation('sagittarius');
+            }
+        }
+
+        function openInfoModal(zodiac) {
+            const modal = document.getElementById('info-modal');
+            document.getElementById('modal-symbol').innerText = zodiac.symbol;
+            document.getElementById('modal-title-th').innerText = zodiac.nameTh;
+            document.getElementById('modal-title-en').innerText = zodiac.nameEn;
+            document.getElementById('modal-description').innerText = zodiac.description;
+            document.getElementById('modal-dates').innerText = zodiac.dates;
+            document.getElementById('modal-area').innerText = zodiac.area;
+            document.getElementById('modal-season').innerText = zodiac.season;
+            document.getElementById('modal-alpha').innerText = zodiac.alphaStar;
+            document.getElementById('modal-mythology-text').innerText = zodiac.mythology;
+
+            // Populate Stars list
+            const starsList = document.getElementById('modal-stars-list');
+            starsList.innerHTML = zodiac.stars.map(s => `
+                <div class="p-2 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                    <div>
+                        <div class="font-semibold text-cyan-200">${s.name}</div>
+                        <div class="text-[10px] text-slate-400">อุณหภูมิ/ประเภท: ${s.temp}</div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-mono text-[10px]">Mag: ${s.mag}</span>
+                </div>
+            `).join('');
+
+            // Populate DSO list
+            const dsoList = document.getElementById('modal-dso-list');
+            dsoList.innerHTML = zodiac.dso.map(d => `
+                <div class="p-2 bg-purple-950/30 rounded-xl border border-purple-500/20 flex justify-between items-center text-xs">
+                    <span class="font-semibold text-purple-200"><i class="fa-solid fa-circle-nodes mr-1.5 text-purple-400"></i>${d}</span>
+                    <span class="text-[10px] text-purple-300">Deep-Sky Object</span>
+                </div>
+            `).join('');
+
+            // Reset tab to overview
+            switchTab('tab-overview');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('translate-x-full'), 10);
+
+            document.getElementById('modal-focus-btn').onclick = () => {
+                modal.classList.add('translate-x-full');
+                setTimeout(() => modal.classList.add('hidden'), 500);
+            };
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.modal-tab').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.classList.add('border-cyan-400', 'text-cyan-300', 'font-semibold');
+                    btn.classList.remove('border-transparent', 'text-slate-400');
+                } else {
+                    btn.classList.remove('border-cyan-400', 'text-cyan-300', 'font-semibold');
+                    btn.classList.add('border-transparent', 'text-slate-400');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === tabId) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Search System
+        function initSearchSystem() {
+            const input = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search');
+            const resultsBox = document.getElementById('search-results');
+
+            input.addEventListener('input', (e) => {
+                const val = e.target.value.trim().toLowerCase();
+                if (val.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                    const matches = [];
+
+                    ZODIAC_DATA.forEach(z => {
+                        if (z.nameTh.toLowerCase().includes(val) || z.nameEn.toLowerCase().includes(val)) {
+                            matches.push({ type: 'กลุ่มดาว', title: `${z.nameTh} (${z.nameEn})`, id: z.id });
+                        }
+                        z.stars.forEach(s => {
+                            if (s.name.toLowerCase().includes(val)) {
+                                matches.push({ type: 'ดาวฤกษ์', title: `${s.name} - ใน ${z.nameTh}`, id: z.id });
+                            }
+                        });
+                        z.dso.forEach(d => {
+                            if (d.toLowerCase().includes(val)) {
+                                matches.push({ type: 'Deep-Sky', title: `${d} - ใน ${z.nameTh}`, id: z.id });
+                            }
+                        });
+                    });
+
+                    if (matches.length > 0) {
+                        resultsBox.innerHTML = matches.map(m => `
+                            <div class="p-2 hover:bg-cyan-900/40 rounded-lg cursor-pointer flex justify-between items-center text-xs" onclick="selectSearchResult('${m.id}')">
+                                <span class="font-medium text-cyan-200">${m.title}</span>
+                                <span class="text-[9px] px-1.5 py-0.5 bg-slate-800 text-cyan-400 rounded">${m.type}</span>
+                            </div>
+                        `).join('');
+                        resultsBox.classList.remove('hidden');
+                    } else {
+                        resultsBox.innerHTML = `<div class="p-2 text-xs text-slate-400 text-center">ไม่พบผลการค้นหา</div>`;
+                        resultsBox.classList.remove('hidden');
+                    }
+                } else {
+                    clearBtn.classList.add('hidden');
+                    resultsBox.classList.add('hidden');
+                }
+            });
+
+            clearBtn.onclick = () => {
+                input.value = '';
+                clearBtn.classList.add('hidden');
+                resultsBox.classList.add('hidden');
+            };
+        }
+
+        function selectSearchResult(id) {
+            document.getElementById('search-results').classList.add('hidden');
+            focusConstellation(id);
+        }
+
+        // Constellation Center View Detector
+        function updateConstellationDetector() {
+            let closest = null;
+            let minDistance = Infinity;
+
+            const centerVec = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+
+            ZODIAC_DATA.forEach(z => {
+                const pos = raDecToVector3(z.ra, z.dec, 150).normalize();
+                const dist = centerVec.distanceTo(pos);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closest = z;
+                }
+            });
+
+            if (closest && minDistance < 0.8) {
+                const confidence = Math.max(0, Math.round((1 - minDistance / 0.8) * 100));
+                document.getElementById('detected-constellation').innerText = `${closest.nameTh} (${closest.nameEn})`;
+                document.getElementById('detector-bar').style.width = `${confidence}%`;
+            } else {
+                document.getElementById('detected-constellation').innerText = 'หันกล้องสำรวจ...';
+                document.getElementById('detector-bar').style.width = '0%';
+            }
+        }
+
+        function initComparisonModal() {
+            const select1 = document.getElementById('compare-select-1');
+            const select2 = document.getElementById('compare-select-2');
+
+            ZODIAC_DATA.forEach((z, idx) => {
+                const opt1 = new Option(`${z.nameTh} (${z.nameEn})`, z.id);
+                const opt2 = new Option(`${z.nameTh} (${z.nameEn})`, z.id);
+                select1.add(opt1);
+                select2.add(opt2);
+            });
+
+            select2.selectedIndex = 1;
+
+            function renderComparison() {
+                const z1 = ZODIAC_DATA.find(z => z.id === select1.value);
+                const z2 = ZODIAC_DATA.find(z => z.id === select2.value);
+                if (!z1 || !z2) return;
+
+                document.getElementById('comparison-table-container').innerHTML = `
+                    <div class="grid grid-cols-3 gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs">
+                        <div class="text-slate-400 font-semibold">หัวข้อเปรียบเทียบ</div>
+                        <div class="text-cyan-300 font-bold">${z1.nameTh}</div>
+                        <div class="text-purple-300 font-bold">${z2.nameTh}</div>
+
+                        <div class="text-slate-400 border-t border-slate-800 pt-2">สัญลักษณ์</div>
+                        <div class="border-t border-slate-800 pt-2 text-lg text-cyan-400">${z1.symbol}</div>
+                        <div class="border-t border-slate-800 pt-2 text-lg text-purple-400">${z2.symbol}</div>
+
+                        <div class="text-slate-400 border-t border-slate-800 pt-2">ขนาดพื้นที่</div>
+                        <div class="border-t border-slate-800 pt-2">${z1.area}</div>
+                        <div class="border-t border-slate-800 pt-2">${z2.area}</div>
+
+                        <div class="text-slate-400 border-t border-slate-800 pt-2">ดาวหลักประธาน</div>
+                        <div class="border-t border-slate-800 pt-2 text-yellow-300">${z1.alphaStar}</div>
+                        <div class="border-t border-slate-800 pt-2 text-yellow-300">${z2.alphaStar}</div>
+
+                        <div class="text-slate-400 border-t border-slate-800 pt-2">ฤดูกาลเห็นชัด</div>
+                        <div class="border-t border-slate-800 pt-2">${z1.season}</div>
+                        <div class="border-t border-slate-800 pt-2">${z2.season}</div>
+                    </div>
+                `;
+            }
+
+            select1.onchange = renderComparison;
+            select2.onchange = renderComparison;
+            renderComparison();
+        }
+
+        // Interactive Quiz Logic
+        let currentQuizAnswer = null;
+        function generateQuizQuestion() {
+            const randomZodiac = ZODIAC_DATA[Math.floor(Math.random() * ZODIAC_DATA.length)];
+            currentQuizAnswer = randomZodiac.id;
+
+            document.getElementById('quiz-question').innerText = `กลุ่มดาวที่มีสัญลักษณ์ "${randomZodiac.symbol}" และมีดาวประธานคือ "${randomZodiac.alphaStar}" คือกลุ่มดาวใด?`;
+            document.getElementById('quiz-hint').innerText = `คำใบ้: ปรากฏเด่นชัดที่สุดใน ${randomZodiac.season}`;
+
+            // Generate 4 Options
+            const options = [randomZodiac];
+            while (options.length < 4) {
+                const rand = ZODIAC_DATA[Math.floor(Math.random() * ZODIAC_DATA.length)];
+                if (!options.find(o => o.id === rand.id)) {
+                    options.push(rand);
+                }
+            }
+            // Shuffle
+            options.sort(() => Math.random() - 0.5);
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = options.map(opt => `
+                <button class="w-full py-2.5 px-4 rounded-xl glass-card text-left text-xs sm:text-sm font-semibold text-slate-200 hover:text-white hover:border-purple-400 transition" onclick="answerQuiz('${opt.id}')">
+                    ${opt.nameTh} (${opt.nameEn})
+                </button>
+            `).join('');
+        }
+
+        function answerQuiz(selectedId) {
+            state.quizTotal++;
+            if (selectedId === currentQuizAnswer) {
+                state.quizScore++;
+                playSound("C6");
+                alert("ถูกต้องแม่นยำ! 🎉 คุณได้รับ 1 คะแนน");
+            } else {
+                playSound("C3");
+                alert("ยังไม่ถูกต้อง ลองใหม่อีกครั้งนะ!");
+            }
+            document.getElementById('quiz-score').innerText = `คะแนน: ${state.quizScore} / ${state.quizTotal}`;
+            generateQuizQuestion();
+        }
+
+        function updateExplorerStats() {
+            const pct = Math.round((state.exploredIds.size / ZODIAC_DATA.length) * 100);
+            document.getElementById('stats-pct').innerText = `${pct}%`;
+            document.getElementById('stats-progress-bar').style.width = `${pct}%`;
+            document.getElementById('stats-const-count').innerText = `${state.exploredIds.size} / 12`;
+            document.getElementById('stats-dso-count').innerText = state.dsoClickedCount;
+        }
+
+        function onCanvasClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects([...constNodeObjects, ...dsoGroup.children]);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData.type === 'constellation') {
+                    focusConstellation(obj.userData.data.id);
+                } else if (obj.userData.type === 'dso') {
+                    state.dsoClickedCount++;
+                    updateExplorerStats();
+                    playSound("G5");
+                    alert(`✨ ค้นพบวัตถุท้องฟ้าลึก (Deep-Sky Object): ${obj.userData.name}\nสังเกตได้ในกลุ่มดาว ${obj.userData.zodiac.nameTh}`);
+                }
+            }
+        }
+
+        function onCanvasHover(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(constNodeObjects);
+
+            if (intersects.length > 0) {
+                document.getElementById('canvas-container').style.cursor = 'pointer';
+            } else {
+                document.getElementById('canvas-container').style.cursor = 'grab';
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function setupUIListeners() {
+            // Toggles
+            document.getElementById('toggle-grid').onclick = (e) => {
+                state.showGrid = !state.showGrid;
+                gridGroup.visible = state.showGrid;
+                e.currentTarget.classList.toggle('active-toggle', state.showGrid);
+            };
+
+            document.getElementById('toggle-ecliptic').onclick = (e) => {
+                state.showEcliptic = !state.showEcliptic;
+                eclipticGroup.visible = state.showEcliptic;
+                e.currentTarget.classList.toggle('active-toggle', state.showEcliptic);
+            };
+
+            document.getElementById('toggle-horizon').onclick = (e) => {
+                state.stargazerHorizon = !state.stargazerHorizon;
+                horizonGroup.visible = state.stargazerHorizon;
+                e.currentTarget.classList.toggle('active-toggle', state.stargazerHorizon);
+            };
+
+            document.getElementById('btn-galactic-center').onclick = () => {
+                triggerGalacticCenterExperience();
+            };
+
+            document.getElementById('btn-reset-cam').onclick = () => {
+                playSound("C4");
+                camera.position.set(0, 0, 140);
+                controls.target.set(0, 0, 0);
+            };
+
+            document.getElementById('toggle-audio').onclick = (e) => {
+                state.audioEnabled = !state.audioEnabled;
+                e.currentTarget.innerHTML = state.audioEnabled ? `<i class="fa-solid fa-volume-high"></i>` : `<i class="fa-solid fa-volume-xmark"></i>`;
+            };
+
+            // Time Slider
+            const timeSlider = document.getElementById('time-slider');
+            const timeDisplay = document.getElementById('time-display');
+            const monthNames = ['มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม', 'มกราคม', 'กุมภาพันธ์'];
+
+            timeSlider.oninput = (e) => {
+                const val = parseInt(e.target.value);
+                state.timeOffsetDeg = THREE.MathUtils.degToRad(val);
+                starSphereGroup.rotation.y = state.timeOffsetDeg;
+                const monthIdx = Math.floor((val / 360) * 12) % 12;
+                timeDisplay.innerText = monthNames[monthIdx];
+            };
+
+            document.querySelectorAll('.quick-time').forEach(btn => {
+                btn.onclick = () => {
+                    const deg = parseInt(btn.dataset.deg);
+                    timeSlider.value = deg;
+                    timeSlider.dispatchEvent(new Event('input'));
+                };
+            });
+
+            // Location picker pitch rotation
+            document.getElementById('location-select').onchange = (e) => {
+                const lat = parseFloat(e.target.value);
+                state.observerLat = lat;
+                const pitchRad = THREE.MathUtils.degToRad(90 - lat);
+                starSphereGroup.rotation.x = pitchRad;
+            };
+
+            // Auto-rotate toggle
+            document.getElementById('btn-auto-rotate').onclick = () => {
+                state.autoRotate = !state.autoRotate;
+                controls.autoRotate = state.autoRotate;
+                controls.autoRotateSpeed = 0.5;
+            };
+
+            // Modal Controls
+            document.getElementById('close-modal').onclick = () => {
+                const modal = document.getElementById('info-modal');
+                modal.classList.add('translate-x-full');
+                setTimeout(() => modal.classList.add('hidden'), 500);
+            };
+
+            // Modal Tabs
+            document.querySelectorAll('.modal-tab').forEach(btn => {
+                btn.onclick = () => switchTab(btn.dataset.tab);
+            });
+
+            // Comparison Modal
+            document.getElementById('btn-compare').onclick = () => {
+                document.getElementById('compare-modal').classList.remove('hidden');
+            };
+            document.getElementById('close-compare').onclick = () => {
+                document.getElementById('compare-modal').classList.add('hidden');
+            };
+
+            // Quiz Modal
+            document.getElementById('btn-quiz').onclick = () => {
+                generateQuizQuestion();
+                document.getElementById('quiz-modal').classList.remove('hidden');
+            };
+            document.getElementById('close-quiz').onclick = () => {
+                document.getElementById('quiz-modal').classList.add('hidden');
+            };
+
+            // Stats Modal
+            document.getElementById('btn-stats').onclick = () => {
+                updateExplorerStats();
+                document.getElementById('stats-modal').classList.remove('hidden');
+            };
+            document.getElementById('close-stats').onclick = () => {
+                document.getElementById('stats-modal').classList.add('hidden');
+            };
+            document.getElementById('btn-reset-stats').onclick = () => {
+                state.exploredIds.clear();
+                state.exploredIds.add('aries');
+                state.dsoClickedCount = 0;
+                updateExplorerStats();
+            };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Auto Sky Rotation
+            if (state.autoRotate) {
+                starSphereGroup.rotation.y += 0.0005;
+                constLinesGroup.rotation.y += 0.0005;
+                dsoGroup.rotation.y += 0.0005;
+            }
+
+            // Pulse DSO Octahedrons
+            const time = performance.now() * 0.002;
+            dsoGroup.children.forEach(dso => {
+                dso.rotation.x = time;
+                dso.rotation.y = time * 0.5;
+            });
+
+            controls.update();
+            updateConstellationDetector();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize Everything on Window Load
+        window.onload = () => {
+            initAudio();
+            init3D();
+            renderZodiacCards();
+            initSearchSystem();
+            initComparisonModal();
+            setupUIListeners();
+            updateExplorerStats();
+
+            // Set initial state
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+
+            animate();
+        };
+    </script>
+</body>
+</html>
