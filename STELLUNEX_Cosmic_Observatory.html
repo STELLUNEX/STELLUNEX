@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STELLUNEX — Cosmic Observatory</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02030a;color:#eef5ff;font-family:Prompt,sans-serif}
+#space{position:fixed;inset:0}.ui{position:fixed;inset:0;pointer-events:none}.click{pointer-events:auto}
+.holo{background:linear-gradient(135deg,rgba(10,18,43,.8),rgba(3,7,25,.58));border:1px solid rgba(100,248,255,.22);box-shadow:0 0 35px rgba(79,140,255,.08),inset 0 0 30px rgba(100,248,255,.03);backdrop-filter:blur(18px)}
+.gridbg{background-image:linear-gradient(rgba(100,248,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(100,248,255,.035) 1px,transparent 1px);background-size:24px 24px}
+.orbitron{font-family:Orbitron,sans-serif}.neon{color:#64f8ff;text-shadow:0 0 12px rgba(100,248,255,.8),0 0 32px rgba(79,140,255,.45)}
+.card{transition:.3s;cursor:pointer}.card:hover,.card.active{transform:translateY(-5px) scale(1.025);border-color:rgba(100,248,255,.7);box-shadow:0 0 25px rgba(100,248,255,.14)}
+.ring{position:absolute;border:1px solid rgba(100,248,255,.18);border-radius:50%;animation:spin 30s linear infinite}.ring:before{content:"";position:absolute;inset:10%;border:1px dashed rgba(155,108,255,.25);border-radius:50%}
+@keyframes spin{to{transform:rotate(360deg)}}.scan{position:absolute;inset:0;pointer-events:none;background:linear-gradient(transparent 49%,rgba(100,248,255,.025) 50%,transparent 51%);background-size:100% 8px;opacity:.45}
+.stat{font-family:Orbitron;font-size:9px;letter-spacing:.12em;color:#8193b7}::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#315c85;border-radius:8px}
+#loading{position:fixed;inset:0;background:#02030a;z-index:100;display:flex;align-items:center;justify-content:center;transition:.8s}.loader{width:80px;height:80px;border:1px solid #26324c;border-top-color:#64f8ff;border-radius:50%;animation:spin .8s linear infinite}
+</style>
+</head>
+<body>
+<div id="loading"><div class="text-center"><div class="loader mx-auto mb-5"></div><div class="orbitron text-xs neon tracking-[.3em]">INITIALIZING STELLUNEX</div><div class="text-[10px] text-slate-500 mt-2">CALIBRATING STAR FIELD...</div></div></div>
+<div id="space"></div><div class="scan"></div>
+
+<div class="ui p-3 sm:p-5 flex flex-col justify-between">
+<header class="flex items-start justify-between gap-3">
+<div class="holo rounded-2xl px-4 py-3 click"><div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl border border-cyan-300/30 bg-cyan-300/5 flex items-center justify-center text-xl">✦</div>
+<div><div class="orbitron text-sm sm:text-base tracking-[.2em] neon">STELLUNEX</div><div class="text-[9px] uppercase tracking-[.25em] text-slate-400">COSMIC OBSERVATORY / 2026</div></div>
+</div></div>
+<div class="hidden md:flex holo rounded-full px-4 py-2 click items-center gap-4 text-[10px] text-slate-300">
+<span><b class="text-cyan-300">12</b> ZODIAC</span><span class="w-px h-4 bg-white/10"></span><span><b class="text-violet-300">3D</b> CELESTIAL MAP</span><span class="w-px h-4 bg-white/10"></span><span class="text-emerald-300">● LIVE</span>
+</div>
+<div class="flex gap-2 click"><button id="searchBtn" class="holo rounded-xl w-10 h-10 text-cyan-300">⌕</button><button id="reset" class="holo rounded-xl w-10 h-10 text-violet-300">↻</button></div>
+</header>
+
+<div class="flex-1 relative">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:block">
+<div class="holo gridbg rounded-2xl p-3 w-44 click">
+<div class="stat mb-3">OBSERVATION MODE</div>
+<button data-mode="orbit" class="mode w-full text-left px-3 py-2 rounded-lg bg-cyan-300/10 text-cyan-200 text-xs mb-1">◉ ORBIT</button>
+<button data-mode="constellation" class="mode w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:bg-white/5 text-xs mb-1">✧ CONSTELLATION</button>
+<button data-mode="deep" class="mode w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:bg-white/5 text-xs">◎ DEEP SPACE</button>
+<div class="border-t border-white/10 my-3"></div><div class="stat mb-2">LAYERS</div>
+<label class="flex justify-between text-[10px] text-slate-400 mb-2">GRID <input id="gridToggle" type="checkbox"></label>
+<label class="flex justify-between text-[10px] text-slate-400 mb-2">LINES <input id="lineToggle" type="checkbox" checked></label>
+<label class="flex justify-between text-[10px] text-slate-400">LABELS <input id="labelToggle" type="checkbox" checked></label>
+</div></div>
+
+<div id="searchPanel" class="hidden absolute top-3 left-1/2 -translate-x-1/2 w-[min(92vw,440px)] holo rounded-2xl p-2 click">
+<input id="search" placeholder="ค้นหากลุ่มดาว เช่น Orion, Taurus..." class="w-full bg-transparent outline-none px-3 py-2 text-sm">
+<div id="results" class="max-h-48 overflow-y-auto"></div></div>
+
+<div id="info" class="hidden absolute right-0 top-1/2 -translate-y-1/2 w-[min(90vw,350px)] holo rounded-3xl p-5 click">
+<button id="close" class="absolute right-3 top-3 text-slate-500 text-xl">×</button>
+<div class="stat">TARGET LOCKED / ZODIAC SECTOR</div><div id="latin" class="orbitron text-lg neon mt-2"></div><div id="thai" class="text-xl font-semibold"></div><div id="date" class="text-xs text-amber-300 mt-1"></div>
+<div class="grid grid-cols-2 gap-2 mt-5"><div class="rounded-xl bg-white/[.03] border border-white/10 p-3"><div class="stat">RA</div><div id="ra" class="text-sm text-cyan-200 mt-1"></div></div><div class="rounded-xl bg-white/[.03] border border-white/10 p-3"><div class="stat">DEC</div><div id="dec" class="text-sm text-violet-200 mt-1"></div></div></div>
+<div class="mt-3 rounded-xl bg-white/[.03] border border-white/10 p-3"><div class="stat">BRIGHTEST STAR</div><div id="star" class="text-sm mt-1"></div></div>
+<div class="mt-3 rounded-xl bg-white/[.03] border border-white/10 p-3"><div class="stat">DEEP SKY</div><div id="dso" class="text-xs text-slate-300 mt-1"></div></div>
+<button id="focus" class="w-full mt-4 rounded-xl py-2.5 bg-cyan-300/10 border border-cyan-300/30 text-cyan-200 text-xs">FOCUS TARGET</button>
+</div>
+
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
+<div class="ring w-52 h-52 sm:w-72 sm:h-72"></div><div class="absolute inset-0 flex items-center justify-center"><div><div class="stat">CELESTIAL NAVIGATION</div><div class="orbitron text-[9px] text-slate-500 mt-2">DRAG • ROTATE • EXPLORE</div></div></div>
+</div>
+</div>
+
+<footer class="click">
+<div class="flex items-end gap-3"><button id="prev" class="hidden sm:block holo rounded-xl w-11 h-11">‹</button><div id="cards" class="flex-1 flex gap-2 overflow-x-auto pb-1"></div><button id="next" class="hidden sm:block holo rounded-xl w-11 h-11">›</button></div>
+<div class="flex justify-between mt-2 px-1 text-[9px] text-slate-500"><span>STELLUNEX // DIGITAL ASTRONOMY MUSEUM</span><span id="coords">RA 00h / DEC +00°</span></div>
+</footer>
+</div>
+
+<script>
+const DATA=[
+['aries','กลุ่มดาวแกะ','Aries','21 มี.ค. – 19 เม.ย.',2.5,20,'Hamal · Mag 2.01','NGC 772'],
+['taurus','กลุ่มดาววัว','Taurus','20 เม.ย. – 20 พ.ค.',4.5,18,'Aldebaran · Mag 0.85','M45 Pleiades · M1 Crab Nebula'],
+['gemini','กลุ่มดาวคนคู่','Gemini','21 พ.ค. – 20 มิ.ย.',7,22,'Pollux & Castor','M35 Open Cluster'],
+['cancer','กลุ่มดาวปู','Cancer','21 มิ.ย. – 22 ก.ค.',8.5,20,'Tarf · Mag 3.50','M44 Beehive Cluster'],
+['leo','กลุ่มดาวสิงโต','Leo','23 ก.ค. – 22 ส.ค.',10.6,15,'Regulus · Mag 1.36','Leo Triplet'],
+['virgo','กลุ่มดาวหญิงสาว','Virgo','23 ส.ค. – 22 ก.ย.',13.2,-4,'Spica · Mag 0.98','Virgo Cluster · M87'],
+['libra','กลุ่มดาวคันชั่ง','Libra','23 ก.ย. – 22 ต.ค.',15.2,-15,'Zubeneschamali · Mag 2.61','NGC 5897'],
+['scorpius','กลุ่มดาวแมงป่อง','Scorpius','23 ต.ค. – 21 พ.ย.',16.8,-30,'Antares · Mag 0.96','M6 Butterfly · M7 Ptolemy'],
+['sagittarius','กลุ่มดาวคนยิงธนู','Sagittarius','22 พ.ย. – 21 ธ.ค.',19,-25,'Kaus Australis · Mag 1.79','M8 Lagoon · M20 Trifid'],
+['capricornus','กลุ่มดาวมังกร / แพะทะเล','Capricornus','22 ธ.ค. – 19 ม.ค.',21,-20,'Deneb Algedi · Mag 2.85','M30 Globular Cluster'],
+['aquarius','กลุ่มดาวคนแบกหม้อน้ำ','Aquarius','20 ม.ค. – 18 ก.พ.',22.3,-10,'Sadalsuud · Mag 2.87','Saturn Nebula · Helix Nebula'],
+['pisces','กลุ่มดาวปลา','Pisces','19 ก.พ. – 20 มี.ค.',.5,15,'Eta Piscium · Mag 3.62','M74 Spiral Galaxy']
+];
+let scene,camera,renderer,controls,stars,grid,lines,labels,selected=null,fly=null;
+const $=id=>document.getElementById(id), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function init(){
+scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,800);camera.position.set(0,12,68);
+renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);$('space').appendChild(renderer.domElement);
+controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.045;controls.minDistance=7;controls.maxDistance=130;
+makeStars();makeGrid();makeConstellations();buildCards();bind();animate();
+setTimeout(()=>{$('loading').style.opacity=0;setTimeout(()=>$('loading').remove(),800)},900);
+}
+function makeStars(){
+const N=6000,g=new THREE.BufferGeometry(),p=new Float32Array(N*3),c=new Float32Array(N*3);
+for(let i=0;i<N;i++){let k=i*3,r=90+Math.random()*180,t=Math.random()*Math.PI*2,q=Math.acos(2*Math.random()-1);p[k]=r*Math.sin(q)*Math.cos(t);p[k+1]=r*Math.sin(q)*Math.sin(t);p[k+2]=r*Math.cos(q);c[k]=.5+Math.random()*.5;c[k+1]=.7+Math.random()*.3;c[k+2]=1}
+g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));stars=new THREE.Points(g,new THREE.PointsMaterial({size:.8,vertexColors:true,transparent:true,opacity:.9}));scene.add(stars);
+}
+function makeGrid(){grid=new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(42,24,16)),new THREE.LineBasicMaterial({color:0x4f8cff,transparent:true,opacity:.11}));grid.visible=false;scene.add(grid)}
+function makeConstellations(){
+lines=new THREE.Group();labels=new THREE.Group();scene.add(lines,labels);
+DATA.forEach((d,i)=>{
+let g=new THREE.Group(),a=i*Math.PI*2/12,r=39;g.position.set(Math.cos(a)*r,Math.sin(i*1.7)*7,Math.sin(a)*r);g.userData=d;
+let pts=[];
+for(let n=0;n<7;n++){let x=Math.sin(i*71+n*13)*3,y=Math.cos(i*41+n*9)*3,z=Math.sin(i*23+n*17)*3;let p=new THREE.Vector3(x,y,z);pts.push(p);let s=new THREE.Mesh(new THREE.SphereGeometry(n? .28:.58,12,12),new THREE.MeshBasicMaterial({color:n?0x8eeeff:0xffd166}));s.position.copy(p);g.add(s)}
+for(let n=0;n<6;n++)g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(pts[n],pts[n+1]),8,.055,5),new THREE.MeshBasicMaterial({color:0x64f8ff,transparent:true,opacity:.65})));
+let hit=new THREE.Mesh(new THREE.SphereGeometry(5.5,8,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0}));hit.userData={id:d[0]};g.add(hit);lines.add(g);
+let c=document.createElement('canvas');c.width=512;c.height=80;let x=c.getContext('2d');x.font='600 28px Prompt';x.fillStyle='#9fefff';x.textAlign='center';x.fillText(d[2],256,42);let sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));sp.scale.set(7,1.1,1);sp.position.copy(g.position).add(new THREE.Vector3(0,6,0));labels.add(sp);
+});
+}
+function buildCards(){$('cards').innerHTML=DATA.map((d,i)=>`<div class="card holo rounded-2xl p-3 min-w-[125px] sm:min-w-[145px]" data-id="${d[0]}"><div class="stat">${String(i+1).padStart(2,'0')} / ZODIAC</div><div class="orbitron text-xs text-cyan-200 mt-2">${d[2]}</div><div class="text-[10px] text-slate-400 mt-1">${d[1]}</div></div>`).join('');document.querySelectorAll('.card').forEach(x=>x.onclick=()=>select(x.dataset.id))}
+function select(id){let d=DATA.find(x=>x[0]===id);if(!d)return;selected=d;document.querySelectorAll('.card').forEach(x=>x.classList.toggle('active',x.dataset.id===id));$('info').classList.remove('hidden');$('latin').textContent=d[2];$('thai').textContent=d[1];$('date').textContent=d[3];$('ra').textContent=d[4]+' h';$('dec').textContent=(d[5]>=0?'+':'')+d[5]+'°';$('star').textContent=d[6];$('dso').textContent=d[7];focus(d)}
+function focus(d){let i=DATA.indexOf(d),g=lines.children[i],target=g.position.clone(),dir=target.clone().normalize(),end=target.clone().add(dir.multiplyScalar(11)),start=camera.position.clone(),st=controls.target.clone(),t0=performance.now();if(fly)cancelAnimationFrame(fly);function m(now){let p=clamp((now-t0)/900,0,1);p=p*p*(3-2*p);camera.position.lerpVectors(start,end,p);controls.target.lerpVectors(st,target,p);if(p<1)fly=requestAnimationFrame(m)}fly=requestAnimationFrame(m);$('coords').textContent=`RA ${d[4]}h / DEC ${d[5]>=0?'+':''}${d[5]}°`}
+function bind(){
+$('searchBtn').onclick=()=>{$('searchPanel').classList.toggle('hidden');if(!$('searchPanel').classList.contains('hidden'))$('search').focus()};
+$('close').onclick=()=>{$('info').classList.add('hidden');selected=null};$('focus').onclick=()=>selected&&focus(selected);
+$('reset').onclick=()=>{camera.position.set(0,12,68);controls.target.set(0,0,0);controls.update();$('info').classList.add('hidden');selected=null};
+$('gridToggle').onchange=e=>grid.visible=e.target.checked;$('lineToggle').onchange=e=>lines.visible=e.target.checked;$('labelToggle').onchange=e=>labels.visible=e.target.checked;
+$('search').oninput=e=>{let q=e.target.value.toLowerCase().trim(),r=$('results');r.innerHTML=q?DATA.filter(d=>(d[1]+' '+d[2]+' '+d[0]).toLowerCase().includes(q)).map(d=>`<button data-id="${d[0]}" class="w-full text-left p-3 hover:bg-cyan-300/10 border-b border-white/5 text-xs"><span class="text-cyan-200">${d[2]}</span><span class="text-slate-500 ml-2">${d[1]}</span></button>`).join(''):'';r.querySelectorAll('button').forEach(b=>b.onclick=()=>{$('searchPanel').classList.add('hidden');select(b.dataset.id)})};
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.remove('bg-cyan-300/10','text-cyan-200'));b.classList.add('bg-cyan-300/10','text-cyan-200');if(b.dataset.mode==='deep')camera.position.set(0,0,95);else if(b.dataset.mode==='constellation')camera.position.set(0,12,55);controls.target.set(0,0,0)});
+$('prev').onclick=()=>$('cards').scrollBy({left:-330,behavior:'smooth'});$('next').onclick=()=>$('cards').scrollBy({left:330,behavior:'smooth'});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+}
+function animate(){requestAnimationFrame(animate);stars.rotation.y+=.00012;controls.update();renderer.render(scene,camera)}
+addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
